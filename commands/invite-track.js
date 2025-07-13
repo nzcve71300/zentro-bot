@@ -3,19 +3,15 @@ const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('invite-track')
-    .setDescription('Check how many invites someone has')
-    .addUserOption(option =>
-      option.setName('user').setDescription('Select a user to check')
-    ),
+    .setDescription('Check how many people you’ve invited'),
 
   async execute(interaction, client) {
-    const user = interaction.options.getUser('user') || interaction.user;
-
     try {
-      // ✅ Only defer if not already handled
       if (!interaction.deferred && !interaction.replied) {
         await interaction.deferReply();
       }
+
+      const user = interaction.user;
 
       const invites = await new Promise((resolve, reject) => {
         client.db.get(
@@ -30,20 +26,18 @@ module.exports = {
 
       const embed = new EmbedBuilder()
         .setColor('Red')
-        .setTitle('🔥 Invite Tracker')
-        .setDescription(`**${user.tag}** has invited **${invites}** user(s).`)
+        .setTitle('🔥 Your Invite Stats')
+        .setDescription(`You have invited **${invites}** user(s).`)
         .setThumbnail(user.displayAvatarURL())
         .setFooter({ text: 'Zentro powered by Emperor 2X' });
 
-      // ✅ Only respond if not already done
       if (!interaction.replied) {
         await interaction.editReply({ embeds: [embed] });
       }
     } catch (err) {
-      console.error('❌ Final fatal error in /invite-track:', err);
+      console.error('❌ invite-track error:', err);
 
-      // Failsafe: only reply if possible
-      if (!interaction.replied && !interaction.deferred) {
+      if (!interaction.deferred && !interaction.replied) {
         await interaction.reply({
           content: 'Something went wrong. Try again later.',
           ephemeral: true
